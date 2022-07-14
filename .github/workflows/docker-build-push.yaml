@@ -1,0 +1,88 @@
+name: generic-docker-build-push-workflow
+
+on:
+  workflow_call:
+    inputs:
+      docker_registry:
+        description: "Docker image registry name"
+        default: "dockerdev-enp.bin.cloud.barco.com"
+        required: false
+        type: string
+      docker_repo:
+        description: "Directory under image registry where to store the Docker Image"
+        required: true
+        type: string
+      image_name:
+        description: "Name of the Docker image"
+        required: true
+        type: string
+      image_tag:
+        description: "Tag/Version of the Docker image"
+        required: true
+        type: string
+      build_directory:
+        description: "Path to the build directory where the Dockerfile is kept"
+        type: string
+      maintainer:
+        description: "Name of maintainer of the Docker image"
+        default: "dl_cmp.devops@barco.com"
+        required: false
+        type: string
+    secrets:
+      registry_username:
+        description: "Username of the user with access to specified docker registry"
+        required: true
+      registry_password:
+        description: "Password of the user with access to specified docker registry"
+        required: true
+
+env:
+  DOCKER_REGISTRY: ${{ inputs.docker_registry }}
+  DOCKER_REPO: ${{ inputs.docker_repo }}
+  IMAGE_NAME: ${{ inputs.image_name }}
+  IMAGE_VERSION: ${{ inputs.image_tag }}
+  BUILD_DIRECTORY: ${{ inputs.build_directory }}
+  
+jobs:
+  check_existing_image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+          
+      - name: Check for existing Docker image version
+        id: docker_image_version_exists
+        run: |
+          docker login $DOCKER_REGISTRY -u $ARTIFACTORY_USER -p $ARTIFACTORY_PWD
+          if `docker manifest inspect $IMAGE > /dev/null`; then
+            echo "Image - $IMAGE - already exists."
+            exit -1
+          else
+            echo "Image - $IMAGE - DOES NOT exist."
+            exit 0
+          fi
+        env:
+          ARTIFACTORY_USER: ${{ secrets.registry_username }}
+          ARTIFACTORY_PWD: ${{ secrets.registry_password }}
+          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKER_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, env.IMAGE_VERSION) }}
+
+  build_push_docker_image:
+    runs-on: ubuntu-latest
+    needs: [check_existing_image]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build & push Docker image
+        id: build_push_image
+        uses: mr-smithers-excellent/docker-build-push@v5
+        if: needs.check_existing_image.steps.docker_image_version_exists.outcome != 'success'
+        with:
+          image: ${{ format('{0}/{1}', env.DOCKER_REPO, env.IMAGE_NAME) }}
+          tags: $IMAGE_VERSION
+          registry: $DOCKER_REGISTRY
+          directory: $BUILD_DIRECTORY
+          dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
+          username: ${{ secrets.registry_username }}
+          password: ${{ secrets.registry_password }}
+          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ env.IMAGE_VERSION }}, ORGANIZATION="Barco"
