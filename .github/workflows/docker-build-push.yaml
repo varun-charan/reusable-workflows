@@ -173,10 +173,10 @@ jobs:
   create-next-tag-version:
     runs-on: ubuntu-latest
     needs: [ get-next-tag-version, build_push_docker_image ]
-    if: |
-      always() &&
-      ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
-      (needs.build_push_docker_image.result == 'success')
+    # if: |
+    #   always() &&
+    #   ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
+    #   (needs.build_push_docker_image.result == 'success')
     name: Create the next version of the tag
     steps:
       - name: Checkout application GitHub repo
