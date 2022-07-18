@@ -51,7 +51,6 @@ env:
   DOCKER_REGISTRY: ${{ inputs.docker_registry }}
   DOCKER_REPO: ${{ inputs.docker_repo }}
   IMAGE_NAME: ${{ inputs.image_name }}
-  IMAGE_VERSION: ${{ inputs.image_tag }}
   BUILD_DIRECTORY: ${{ inputs.build_directory }}
   
 jobs:
@@ -96,6 +95,7 @@ jobs:
 
   check_existing_image:
     runs-on: ubuntu-latest
+    needs: [ get-next-tag-version ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -115,7 +115,7 @@ jobs:
         env:
           ARTIFACTORY_USER: ${{ secrets.registry_username }}
           ARTIFACTORY_PWD: ${{ secrets.registry_password }}
-          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKERDEV_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, env.IMAGE_VERSION) }}
+          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKERDEV_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, needs.get-next-tag-version.outputs.next-tag) }}
 
       - name: PRD Check for existing Docker image version
         if: ${{ github.ref == 'master' || github.ref == 'refs/heads/master' }}
@@ -132,7 +132,7 @@ jobs:
         env:
           ARTIFACTORY_USER: ${{ secrets.registry_username }}
           ARTIFACTORY_PWD: ${{ secrets.registry_password }}
-          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKER_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, env.IMAGE_VERSION) }}
+          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKER_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, needs.get-next-tag-version.outputs.next-tag) }}
 
   build_push_docker_image:
     runs-on: ubuntu-latest
@@ -153,13 +153,13 @@ jobs:
           ( needs.check_existing_image.steps.dockerdev_image_version_exists.outcome != 'success' )
         with:
           image: ${{ format('{0}/{1}', env.DOCKER_REPO, env.IMAGE_NAME) }}
-          tags: $IMAGE_VERSION
+          tags: ${{ needs.get-next-tag-version.outputs.next-tag }}
           registry: $DOCKERDEV_REGISTRY
           directory: $BUILD_DIRECTORY
           dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
           username: ${{ secrets.registry_username }}
           password: ${{ secrets.registry_password }}
-          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ env.IMAGE_VERSION }}, ORGANIZATION="Barco"
+          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="Barco"
 
       - name: PRD Build & push Docker image
         id: prd_build_push_image
@@ -169,13 +169,13 @@ jobs:
           ( needs.check_existing_image.steps.docker_image_version_exists.outcome != 'success' )
         with:
           image: ${{ format('{0}/{1}', env.DOCKER_REPO, env.IMAGE_NAME) }}
-          tags: $IMAGE_VERSION
+          tags: ${{ needs.get-next-tag-version.outputs.next-tag }}
           registry: $DOCKER_REGISTRY
           directory: $BUILD_DIRECTORY
           dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
           username: ${{ secrets.registry_username }}
           password: ${{ secrets.registry_password }}
-          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ env.IMAGE_VERSION }}, ORGANIZATION="Barco"
+          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="Barco"
 
   # After a Docker image with the next version has been created, create a tag for the same in Git repo.
   create-next-tag-version:
