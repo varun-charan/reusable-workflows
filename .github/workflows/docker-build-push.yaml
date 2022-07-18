@@ -160,7 +160,6 @@ jobs:
   # After a Docker image with the next version has been created, create a tag for the same in Git repo.
   create-next-tag-version:
     runs-on: ubuntu-latest
-    name: Create Release with next tag
     needs: [ get-next-tag-version, build_push_docker_image ]
     if: |
       always() &&
