@@ -3,9 +3,14 @@ name: generic-docker-build-push-workflow
 on:
   workflow_call:
     inputs:
-      docker_registry:
+      dockerdev_registry:
         description: "Docker image registry name"
         default: "dockerdev-enp.bin.cloud.barco.com"
+        required: false
+        type: string
+      docker_registry:
+        description: "Docker image registry name"
+        default: "docker-enp.bin.cloud.barco.com"
         required: false
         type: string
       docker_repo:
@@ -14,10 +19,6 @@ on:
         type: string
       image_name:
         description: "Name of the Docker image"
-        required: true
-        type: string
-      image_tag:
-        description: "Tag/Version of the Docker image"
         required: true
         type: string
       build_directory:
@@ -37,20 +38,70 @@ on:
         required: true
 
 env:
+  DOCKERDEV_REGISTRY: ${{ inputs.dockerdev_registry }}
   DOCKER_REGISTRY: ${{ inputs.docker_registry }}
   DOCKER_REPO: ${{ inputs.docker_repo }}
   IMAGE_NAME: ${{ inputs.image_name }}
-  IMAGE_VERSION: ${{ inputs.image_tag }}
   BUILD_DIRECTORY: ${{ inputs.build_directory }}
   
 jobs:
+  get-next-tag-version:
+    runs-on: ubuntu-latest
+    name: Get the next version of the tag
+    outputs:
+      next-tag: ${{ steps.get_next_tag.outputs.new_tag }}
+    steps:
+      - name: Checkout application GitHub repo
+        uses: actions/checkout@v3
+      
+      - name: Get the next version of the tag
+        id: get_next_tag
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # DO NOT create Git tag. Just calculate new tag version.
+          dry_run: true
+          default_bump: minor
+          default_prerelease_bump: preminor
+          # Helps avoid duplicate Docker image tags when two branches are created from same master commit.
+          append_to_pre_release_tag: ${{ format('{0}.{1}', github.actor, github.sha) }}
+
+      - name: Debug
+        shell: bash
+        run: |
+          echo "Current Latest Tag: $tag"
+          echo "Github ref: ${{ github.ref }}"
+          echo "Pull Req Base Ref: ${{ github.event.pull_request.base.ref }}"
+        env:
+          tag: ${{ steps.get_next_tag.outputs.new_tag }}
+
   check_existing_image:
     runs-on: ubuntu-latest
+    name: Check if image exists with next tag
+    needs: [ get-next-tag-version ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
           
-      - name: Check for existing Docker image version
+      - name: DEV Check for existing Docker image version
+        if: ${{ github.ref != 'master' && github.ref != 'refs/heads/master' }}
+        id: dockerdev_image_version_exists
+        run: |
+          docker login $DOCKERDEV_REGISTRY -u $ARTIFACTORY_USER -p $ARTIFACTORY_PWD
+          if `docker manifest inspect $IMAGE > /dev/null`; then
+            echo "Image - $IMAGE - already exists."
+            exit -1
+          else
+            echo "Image - $IMAGE - DOES NOT exist."
+            exit 0
+          fi
+        env:
+          ARTIFACTORY_USER: ${{ secrets.registry_username }}
+          ARTIFACTORY_PWD: ${{ secrets.registry_password }}
+          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKERDEV_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, needs.get-next-tag-version.outputs.next-tag) }}
+
+      - name: PRD Check for existing Docker image version
+        if: ${{ github.ref == 'master' || github.ref == 'refs/heads/master' }}
         id: docker_image_version_exists
         run: |
           docker login $DOCKER_REGISTRY -u $ARTIFACTORY_USER -p $ARTIFACTORY_PWD
@@ -64,25 +115,66 @@ jobs:
         env:
           ARTIFACTORY_USER: ${{ secrets.registry_username }}
           ARTIFACTORY_PWD: ${{ secrets.registry_password }}
-          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKER_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, env.IMAGE_VERSION) }}
+          IMAGE: ${{ format('{0}/{1}/{2}:{3}', env.DOCKER_REGISTRY, env.DOCKER_REPO, env.IMAGE_NAME, needs.get-next-tag-version.outputs.next-tag) }}
 
   build_push_docker_image:
     runs-on: ubuntu-latest
+    name: Build and Push Docker image to repo
     needs: [check_existing_image]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout application GitHub repo
+        uses: actions/checkout@v3
 
-      - name: Build & push Docker image
-        id: build_push_image
+      - name: DEV Build & push Docker image
+        id: dev_build_push_image
         uses: mr-smithers-excellent/docker-build-push@v5
-        if: needs.check_existing_image.steps.docker_image_version_exists.outcome != 'success'
+        if: |
+          ( github.ref != 'master' && github.ref != 'refs/heads/master' ) &&
+          ( needs.check_existing_image.steps.dockerdev_image_version_exists.outcome != 'success' )
         with:
           image: ${{ format('{0}/{1}', env.DOCKER_REPO, env.IMAGE_NAME) }}
-          tags: $IMAGE_VERSION
+          tags: ${{ needs.get-next-tag-version.outputs.next-tag }}
+          registry: $DOCKERDEV_REGISTRY
+          directory: $BUILD_DIRECTORY
+          dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
+          username: ${{ secrets.registry_username }}
+          password: ${{ secrets.registry_password }}
+          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="Barco"
+
+      - name: PRD Build & push Docker image
+        id: prd_build_push_image
+        uses: mr-smithers-excellent/docker-build-push@v5
+        if: |
+          ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
+          ( needs.check_existing_image.steps.docker_image_version_exists.outcome != 'success' )
+        with:
+          image: ${{ format('{0}/{1}', env.DOCKER_REPO, env.IMAGE_NAME) }}
+          tags: ${{ needs.get-next-tag-version.outputs.next-tag }}
           registry: $DOCKER_REGISTRY
           directory: $BUILD_DIRECTORY
           dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
           username: ${{ secrets.registry_username }}
           password: ${{ secrets.registry_password }}
-          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ env.IMAGE_VERSION }}, ORGANIZATION="Barco"
+          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="Barco"
+
+  # After a Docker image with the next version has been created, create a tag for the same in Git repo.
+  create-next-tag-version:
+    runs-on: ubuntu-latest
+    name: Create Release with next tag
+    needs: [ get-next-tag-version, build_push_docker_image ]
+    if: |
+      always() &&
+      ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
+      (needs.build_push_docker_image.result == 'success')
+    name: Create the next version of the tag
+    steps:
+      - name: Checkout application GitHub repo
+        uses: actions/checkout@v3
+
+      - name: Create a GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.get-next-tag-version.outputs.next-tag }}
+          name: ${{ needs.get-next-tag-version.outputs.next-tag }}
+          # Generates awesome release notes that you can edit later if you want.
+          generateReleaseNotes: true
