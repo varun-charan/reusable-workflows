@@ -102,7 +102,7 @@ jobs:
           
       - name: DEV Check for existing Docker image version
         if: ${{ github.ref != 'master' && github.ref != 'refs/heads/master' }}
-        id: docker_image_version_exists
+        id: dockerdev_image_version_exists
         run: |
           docker login $DOCKERDEV_REGISTRY -u $ARTIFACTORY_USER -p $ARTIFACTORY_PWD
           if `docker manifest inspect $IMAGE > /dev/null`; then
@@ -150,7 +150,7 @@ jobs:
         uses: mr-smithers-excellent/docker-build-push@v5
         if: |
           ( github.ref != 'master' && github.ref != 'refs/heads/master' ) &&
-          ( needs.check_existing_image.steps.docker_image_version_exists.outcome != 'success' )
+          ( needs.check_existing_image.steps.dockerdev_image_version_exists.outcome != 'success' )
         with:
           image: ${{ format('{0}/{1}', env.DOCKER_REPO, env.IMAGE_NAME) }}
           tags: $IMAGE_VERSION
