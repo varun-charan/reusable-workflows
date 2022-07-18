@@ -136,10 +136,10 @@ jobs:
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
-        with:
-          repository: ${{ env.APP_GITHUB_REPO }}
-          # This is a temp path where the application repo will be checked out and kept.
-          path: ${{ env.BUILD_DIRECTORY }}
+        # with:
+        #   repository: ${{ env.APP_GITHUB_REPO }}
+        #   # This is a temp path where the application repo will be checked out and kept.
+        #   path: ${{ env.BUILD_DIRECTORY }}
       
       - name: Debug
         shell: bash
