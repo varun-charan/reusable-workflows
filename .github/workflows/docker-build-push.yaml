@@ -150,7 +150,7 @@ jobs:
         with:
           image: ${{ format('{0}/{1}', env.DOCKER_REPO, env.IMAGE_NAME) }}
           tags: ${{ needs.get-next-tag-version.outputs.next-tag }}
-          registry: $DOCKER_REGISTRY
+          registry: ${{ env.DOCKER_REGISTRY }}
           directory: $BUILD_DIRECTORY
           dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
           username: ${{ secrets.registry_username }}
