@@ -63,7 +63,7 @@ jobs:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
         with:
-          repository: $APP_GITHUB_REPO
+          repository: ${{ env.APP_GITHUB_REPO }}
           ref: feature/do-everything-in-reusable-workflow
           # This is a temp path where the application repo will be checked out and kept.
           # path: my-app
