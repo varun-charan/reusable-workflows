@@ -120,7 +120,7 @@ jobs:
   build_push_docker_image:
     runs-on: ubuntu-latest
     name: Build and Push Docker image to repo
-    needs: [check_existing_image]
+    needs: [get-next-tag-version, check_existing_image]
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
