@@ -62,9 +62,9 @@ jobs:
         
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
-        with:
-          repository: ${{ env.APP_GITHUB_REPO }}
-          ref: feature/do-everything-in-reusable-workflow
+        # with:
+        #   repository: ${{ env.APP_GITHUB_REPO }}
+        #   ref: feature/do-everything-in-reusable-workflow
           # This is a temp path where the application repo will be checked out and kept.
           # path: my-app
       
@@ -136,17 +136,6 @@ jobs:
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
-        # with:
-        #   repository: ${{ env.APP_GITHUB_REPO }}
-        #   # This is a temp path where the application repo will be checked out and kept.
-        #   path: ${{ env.BUILD_DIRECTORY }}
-      
-      - name: Debug
-        shell: bash
-        run: |
-          pwd
-          ls -laRt
-          find . -name "Dockerfile"
 
       - name: DEV Build & push Docker image
         id: dev_build_push_image
@@ -192,8 +181,8 @@ jobs:
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
-        with:
-          repository: ${{ env.APP_GITHUB_REPO }}
+        # with:
+        #   repository: ${{ env.APP_GITHUB_REPO }}
 
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
