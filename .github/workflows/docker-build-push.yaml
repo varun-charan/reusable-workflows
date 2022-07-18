@@ -25,10 +25,6 @@ on:
         description: "Name of the Docker image"
         required: true
         type: string
-      image_tag:
-        description: "Tag/Version of the Docker image"
-        required: true
-        type: string
       build_directory:
         description: "Path to the build directory where the Dockerfile is kept"
         type: string
