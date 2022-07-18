@@ -145,7 +145,7 @@ jobs:
         shell: bash
         run: |
           pwd
-          ls -laRT
+          ls -laRt
           find . -name "Dockerfile"
 
       - name: DEV Build & push Docker image
