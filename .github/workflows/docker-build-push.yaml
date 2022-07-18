@@ -146,7 +146,7 @@ jobs:
           path: $BUILD_DIRECTORY
 
       - name: DEV Build & push Docker image
-        id: build_push_image
+        id: dev_build_push_image
         uses: mr-smithers-excellent/docker-build-push@v5
         if: |
           ( github.ref != 'master' && github.ref != 'refs/heads/master' ) &&
@@ -162,7 +162,7 @@ jobs:
           buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ env.IMAGE_VERSION }}, ORGANIZATION="Barco"
 
       - name: PRD Build & push Docker image
-        id: build_push_image
+        id: prd_build_push_image
         uses: mr-smithers-excellent/docker-build-push@v5
         if: |
           ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
