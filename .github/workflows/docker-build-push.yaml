@@ -140,6 +140,13 @@ jobs:
           repository: ${{ env.APP_GITHUB_REPO }}
           # This is a temp path where the application repo will be checked out and kept.
           path: ${{ env.BUILD_DIRECTORY }}
+      
+      - name: Debug
+        shell: bash
+        run: |
+          pwd
+          ls -laRT
+          find . -name "Dockerfile"
 
       - name: DEV Build & push Docker image
         id: dev_build_push_image
