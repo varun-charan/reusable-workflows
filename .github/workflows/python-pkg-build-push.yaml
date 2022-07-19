@@ -7,18 +7,16 @@ on:
         description: "Python Package Name"
         required: true
         type: string
-      index_url_dev:
-        description: "Dev URL to store Python packages"
-        required: true
-        type: string
-      index_url:
-        description: "Prd URL to store Python packages"
-        required: true
-        type: string
       build_directory:
         description: "Path to the build directory where the setup.py file is kept"
         type: string
     secrets:
+      index_url_dev:
+        description: "Dev URL to store Python packages"
+        required: true
+      index_url:
+        description: "Prd URL to store Python packages"
+        required: true
       index_url_pip_dev:
         description: "Dev URL from which Python packages can be installed via pip"
         required: true
@@ -145,7 +143,7 @@ jobs:
           twine upload --repository-url ${{ env.INDEX_URL_DEV }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORYUSER_USR }} -p ${{ ARTIFACTORYUSER_PSW }}
         env:
           VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
-          INDEX_URL_DEV: ${{ inputs.index_url_dev }}
+          INDEX_URL_DEV: ${{ secrets.index_url_dev }}
           ARTIFACTORY_USER: ${{ secrets.registry_username }}
           ARTIFACTORY_PWD: ${{ secrets.registry_password }}
 
@@ -158,7 +156,7 @@ jobs:
           twine upload --repository-url ${{ env.INDEX_URL }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORYUSER_USR }} -p ${{ ARTIFACTORYUSER_PSW }}
         env:
           VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
-          INDEX_URL: ${{ inputs.index_url }}
+          INDEX_URL: ${{ secrets.index_url }}
           ARTIFACTORY_USER: ${{ secrets.registry_username }}
           ARTIFACTORY_PWD: ${{ secrets.registry_password }}
 
