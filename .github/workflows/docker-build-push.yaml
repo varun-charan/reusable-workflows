@@ -5,13 +5,11 @@ on:
     inputs:
       dockerdev_registry:
         description: "Docker image registry name"
-        default: "dockerdev-enp.bin.cloud.barco.com"
-        required: false
+        required: true
         type: string
       docker_registry:
         description: "Docker image registry name"
-        default: "docker-enp.bin.cloud.barco.com"
-        required: false
+        required: true
         type: string
       docker_repo:
         description: "Directory under image registry where to store the Docker Image"
@@ -26,7 +24,7 @@ on:
         type: string
       maintainer:
         description: "Name of maintainer of the Docker image"
-        default: "dl_cmp.devops@barco.com"
+        default: "dl_cmp.devops.sample"
         required: false
         type: string
     secrets:
@@ -139,7 +137,7 @@ jobs:
           dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
           username: ${{ secrets.registry_username }}
           password: ${{ secrets.registry_password }}
-          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="Barco"
+          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="None"
 
       - name: PRD Build & push Docker image
         id: prd_build_push_image
@@ -155,7 +153,7 @@ jobs:
           dockerfile: ${{ format('{0}/Dockerfile', env.BUILD_DIRECTORY) }}
           username: ${{ secrets.registry_username }}
           password: ${{ secrets.registry_password }}
-          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="Barco"
+          buildArgs: MAINTAINER=${{ inputs.maintainer }}, VERSION=${{ needs.get-next-tag-version.outputs.next-tag }}, ORGANIZATION="None"
 
   # After a Docker image with the next version has been created, create a tag for the same in Git repo.
   create-next-tag-version:
