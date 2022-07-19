@@ -1,0 +1,187 @@
+name: Python package
+
+on:
+  workflow_call:
+    inputs:
+      pkg_name:
+        description: "Python Package Name"
+        required: true
+        type: string
+      index_url_dev:
+        description: "Dev URL to store Python packages"
+        required: true
+        type: string
+      index_url:
+        description: "Prd URL to store Python packages"
+        required: true
+        type: string
+      build_directory:
+        description: "Path to the build directory where the setup.py file is kept"
+        type: string
+    secrets:
+      index_url_pip_dev:
+        description: "Dev URL from which Python packages can be installed via pip"
+        required: true
+      index_url_pip:
+        description: "Prd URL from which Python packages can be installed via pip"
+        required: true
+      registry_username:
+        description: "Username of the user with access to specified docker registry"
+        required: true
+      registry_password:
+        description: "Password of the user with access to specified docker registry"
+        required: true
+
+env:
+  PKG_NAME: ${{ inputs.pkg_name }}
+  BUILD_DIRECTORY: ${{ inputs.build_directory }} 
+
+jobs:
+  get-next-tag-version:
+    runs-on: ubuntu-latest
+    name: Get the next version of the tag
+    outputs:
+      next-tag: ${{ steps.get_next_tag.outputs.new_tag }}
+    steps:
+      - name: Checkout application GitHub repo
+        uses: actions/checkout@v3
+      
+      - name: Get the next version of the tag
+        id: get_next_tag
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # DO NOT create Git tag. Just calculate new tag version.
+          dry_run: true
+          default_bump: minor
+          default_prerelease_bump: preminor
+          # Helps avoid duplicate Docker image tags when two branches are created from same master commit.
+          append_to_pre_release_tag: ${{ format('{0}.{1}', github.actor, github.sha) }}
+
+      - name: Debug
+        shell: bash
+        run: |
+          echo "Current Latest Tag: $tag"
+          echo "Github ref: ${{ github.ref }}"
+          echo "Pull Req Base Ref: ${{ github.event.pull_request.base.ref }}"
+        env:
+          tag: ${{ steps.get_next_tag.outputs.new_tag }}
+
+  check_existing_version:
+    runs-on: ubuntu-latest
+    name: Check if image exists with next tag
+    needs: [ get-next-tag-version ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+          
+      - name: DEV Check if this python package exists with the same version
+        if: ${{ github.ref != 'master' && github.ref != 'refs/heads/master' }}
+        id: dev_python_package_version_exists
+        run: |
+          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP_DEV }} 2>&1 | (! grep ${{ env.VERSION}))`; then
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - already exists."
+            exit -1
+          else
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - DOES NOT exist."
+            exit 0
+          fi
+        env:
+          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          INDEX_URL_PIP_DEV: ${{ secrets.index_url_pip_dev }}
+
+      - name: PRD Check for existing Docker image version
+        if: ${{ github.ref == 'master' || github.ref == 'refs/heads/master' }}
+        id: prd_python_package_version_exists
+        run: |
+          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP }} 2>&1 | (! grep ${{ env.VERSION}))`; then
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - already exists."
+            exit -1
+          else
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - DOES NOT exist."
+            exit 0
+          fi
+        env:
+          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          INDEX_URL_PIP: ${{ secrets.index_url_pip }}
+
+  build_push_python_package:
+    runs-on: ubuntu-latest
+    needs: [ get-next-tag-version, check_existing_version ]
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          ls -la
+          pwd
+          cd ${{ env.BUILD_DIRECTORY }}
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools wheel twine
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # - name: Test with pytest
+      #   run: ${{ format('pytest {0}/tests', env.BUILD_DIRECTORY }}
+
+      - name: Dev Build and publish
+        if: |
+          ( github.ref != 'master' && github.ref != 'refs/heads/master' ) &&
+          ( needs.check_existing_image.steps.dev_python_package_version_exists.outcome != 'success' )
+        run: |
+          ls -la
+          pwd
+          cd ${{ env.BUILD_DIRECTORY }}
+          python setup.py bdist_wheel
+          twine upload --repository-url ${{ env.INDEX_URL_DEV }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORYUSER_USR }} -p ${{ ARTIFACTORYUSER_PSW }}
+        env:
+          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          INDEX_URL_DEV: ${{ inputs.index_url_dev }}
+          ARTIFACTORY_USER: ${{ secrets.registry_username }}
+          ARTIFACTORY_PWD: ${{ secrets.registry_password }}
+
+      - name: Prd Build and publish
+        if: |
+          ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
+          ( needs.check_existing_image.steps.prd_python_package_version_exists.outcome != 'success' )
+        run: |
+          python setup.py bdist_wheel
+          twine upload --repository-url ${{ env.INDEX_URL }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORYUSER_USR }} -p ${{ ARTIFACTORYUSER_PSW }}
+        env:
+          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          INDEX_URL: ${{ inputs.index_url }}
+          ARTIFACTORY_USER: ${{ secrets.registry_username }}
+          ARTIFACTORY_PWD: ${{ secrets.registry_password }}
+
+  
+  # After a Docker image with the next version has been created, create a tag for the same in Git repo.
+  create-next-tag-version:
+    runs-on: ubuntu-latest
+    needs: [ get-next-tag-version, build_push_python_package ]
+    if: |
+      always() &&
+      ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
+      (needs.build_push_python_package.result == 'success')
+    name: Create the next version of the tag
+    steps:
+      - name: Checkout application GitHub repo
+        uses: actions/checkout@v3
+
+      - name: Create a GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.get-next-tag-version.outputs.next-tag }}
+          name: ${{ needs.get-next-tag-version.outputs.next-tag }}
+          # Generates awesome release notes that you can edit later if you want.
+          generateReleaseNotes: true
+
+        
