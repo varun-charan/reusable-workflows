@@ -1,4 +1,4 @@
-name: Python package
+name: generic-python-pkg-build-push-workflow
 
 on:
   workflow_call:
