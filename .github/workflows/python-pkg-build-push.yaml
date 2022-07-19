@@ -77,11 +77,11 @@ jobs:
         if: ${{ github.ref != 'master' && github.ref != 'refs/heads/master' }}
         id: dev_python_package_version_exists
         run: |
-          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP_DEV }} 2>&1 | (! grep ${{ env.VERSION}})`; then
-            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - already exists."
+          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP_DEV }} 2>&1 | (! grep ${{ env.VERSION }})`; then
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION }} - already exists."
             exit -1
           else
-            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - DOES NOT exist."
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION }} - DOES NOT exist."
             exit 0
           fi
         env:
@@ -92,11 +92,11 @@ jobs:
         if: ${{ github.ref == 'master' || github.ref == 'refs/heads/master' }}
         id: prd_python_package_version_exists
         run: |
-          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP }} 2>&1 | (! grep ${{ env.VERSION}})`; then
-            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - already exists."
+          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP }} 2>&1 | (! grep ${{ env.VERSION }})`; then
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION }} - already exists."
             exit -1
           else
-            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION} - DOES NOT exist."
+            echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION }} - DOES NOT exist."
             exit 0
           fi
         env:
