@@ -7,9 +7,6 @@ on:
         description: "Python Package Name"
         required: true
         type: string
-      build_directory:
-        description: "Path to the build directory where the setup.py file is kept"
-        type: string
     secrets:
       index_url_dev:
         description: "Dev URL to store Python packages"
@@ -32,7 +29,6 @@ on:
 
 env:
   PKG_NAME: ${{ inputs.pkg_name }}
-  BUILD_DIRECTORY: ${{ inputs.build_directory }} 
 
 jobs:
   get-next-tag-version:
@@ -124,9 +120,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade setuptools wheel twine
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      # - name: Test with pytest
-      #   run: ${{ format('pytest {0}/tests', env.BUILD_DIRECTORY }}
 
       - name: Dev Build and publish
         if: |
