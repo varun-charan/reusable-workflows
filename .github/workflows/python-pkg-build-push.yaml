@@ -134,7 +134,7 @@ jobs:
           ( needs.check_existing_image.steps.dev_python_package_version_exists.outcome != 'success' )
         run: |
           python setup.py ${{ env.VERSION }} bdist_wheel
-          twine upload --repository-url ${{ env.INDEX_URL_DEV }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
+          twine upload --repository-url ${{ env.INDEX_URL_DEV }} dist/*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
         env:
           VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
           INDEX_URL_DEV: ${{ secrets.index_url_dev }}
@@ -147,7 +147,7 @@ jobs:
           ( needs.check_existing_image.steps.prd_python_package_version_exists.outcome != 'success' )
         run: |
           python setup.py ${{ env.VERSION }} bdist_wheel
-          twine upload --repository-url ${{ env.INDEX_URL }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
+          twine upload --repository-url ${{ env.INDEX_URL }} dist/*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
         env:
           VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
           INDEX_URL: ${{ secrets.index_url }}
