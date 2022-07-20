@@ -77,7 +77,7 @@ jobs:
         if: ${{ github.ref != 'master' && github.ref != 'refs/heads/master' }}
         id: dev_python_package_version_exists
         run: |
-          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP_DEV }} 2>&1 | (! grep ${{ env.VERSION }})`; then
+          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP_DEV }} 2>&1 | (! grep ${{ env.VERSION }}) > /dev/null`; then
             echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION }} - already exists."
             exit -1
           else
@@ -85,14 +85,14 @@ jobs:
             exit 0
           fi
         env:
-          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
           INDEX_URL_PIP_DEV: ${{ secrets.index_url_pip_dev }}
 
       - name: PRD Check for existing Docker image version
         if: ${{ github.ref == 'master' || github.ref == 'refs/heads/master' }}
         id: prd_python_package_version_exists
         run: |
-          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP }} 2>&1 | (! grep ${{ env.VERSION }})`; then
+          if `pip install ${{ env.PKG_NAME }}== --extra-index ${{ env.INDEX_URL_PIP }} 2>&1 | (! grep ${{ env.VERSION }}) > /dev/null`; then
             echo "Python Package - ${{ env.PKG_NAME }}:${{ env.VERSION }} - already exists."
             exit -1
           else
@@ -100,7 +100,7 @@ jobs:
             exit 0
           fi
         env:
-          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
           INDEX_URL_PIP: ${{ secrets.index_url_pip }}
 
   build_push_python_package:
@@ -142,7 +142,7 @@ jobs:
           python setup.py bdist_wheel
           twine upload --repository-url ${{ env.INDEX_URL_DEV }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
         env:
-          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
           INDEX_URL_DEV: ${{ secrets.index_url_dev }}
           ARTIFACTORY_USER: ${{ secrets.registry_username }}
           ARTIFACTORY_PWD: ${{ secrets.registry_password }}
@@ -155,7 +155,7 @@ jobs:
           python setup.py bdist_wheel
           twine upload --repository-url ${{ env.INDEX_URL }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
         env:
-          VERSION: ${{ needs.get-nex-tag-version.outputs.next-tag }}
+          VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
           INDEX_URL: ${{ secrets.index_url }}
           ARTIFACTORY_USER: ${{ secrets.registry_username }}
           ARTIFACTORY_PWD: ${{ secrets.registry_password }}
