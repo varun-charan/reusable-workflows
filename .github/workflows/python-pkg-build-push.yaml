@@ -121,8 +121,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          ls -la
-          pwd
           python -m pip install --upgrade pip
           pip install --upgrade setuptools wheel twine
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -135,9 +133,7 @@ jobs:
           ( github.ref != 'master' && github.ref != 'refs/heads/master' ) &&
           ( needs.check_existing_image.steps.dev_python_package_version_exists.outcome != 'success' )
         run: |
-          ls -la
-          pwd
-          python setup.py bdist_wheel
+          python setup.py ${{ env.VERSION }} bdist_wheel
           twine upload --repository-url ${{ env.INDEX_URL_DEV }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
         env:
           VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
@@ -150,7 +146,7 @@ jobs:
           ( github.ref == 'master' || github.ref == 'refs/heads/master' ) &&
           ( needs.check_existing_image.steps.prd_python_package_version_exists.outcome != 'success' )
         run: |
-          python setup.py bdist_wheel
+          python setup.py ${{ env.VERSION }} bdist_wheel
           twine upload --repository-url ${{ env.INDEX_URL }} dist/${{ env.PKG_NAME }}-${{ env.VERSION }}*.whl -u ${{ env.ARTIFACTORY_USER }} -p ${{ env.ARTIFACTORY_PWD }}
         env:
           VERSION: ${{ needs.get-next-tag-version.outputs.next-tag }}
