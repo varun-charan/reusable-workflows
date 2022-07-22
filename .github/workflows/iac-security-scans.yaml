@@ -51,9 +51,10 @@ jobs:
           # For example `deployment.yaml` for a Kubernetes deployment manifest
           # or `main.tf` for a Terraform configuration file
           args: ${{ format('--severity-threshold={0}', env.SEVERITY) }}
+          sarif: true
 
       - name: Upload result to GitHub Code Scanning
         if: ${{ env.GENERATE_SARIF == 'true' }}
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: ./snyk.sarif
+          sarif_file: snyk.sarif
