@@ -22,8 +22,14 @@ env:
   GENERATE_SARIF: ${{ inputs.generate_sarif }}
   SEVERITY: ${{ inputs.severity }}
   
+permissions:
+  contents: read
+  
 jobs:
   snyk-scan:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     name: Run snyk scan
     steps:
