@@ -3,7 +3,7 @@ name: perform-security-scans
 on:
   workflow_call:
     inputs:
-      generate_sarif:
+      upload_sarif:
         description: "Flag to control if snyk scan issues need to be published in Github Security tab."
         required: false
         type: boolean
@@ -19,7 +19,7 @@ on:
         required: true
 
 env:
-  GENERATE_SARIF: ${{ inputs.generate_sarif }}
+  UPLOAD_SARIF: ${{ inputs.upload_sarif }}
   SEVERITY: ${{ inputs.severity }}
   
 permissions:
@@ -50,11 +50,18 @@ jobs:
           # Add the path to the configuration file that you would like to test.
           # For example `deployment.yaml` for a Kubernetes deployment manifest
           # or `main.tf` for a Terraform configuration file
+          file: .
           args: ${{ format('--severity-threshold={0}', env.SEVERITY) }}
-          sarif: true
+
+      - name: Debug
+        shell: bash
+        run: |
+          pwd
+          ls -la
+          find . -name "snyk.sarif"
 
       - name: Upload result to GitHub Code Scanning
-        if: ${{ env.GENERATE_SARIF == 'true' }}
+        if: ${{ env.UPLOAD_SARIF == 'true' }}
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: snyk.sarif
