@@ -24,7 +24,7 @@ env:
   
 permissions:
   contents: read
-  
+
 jobs:
   snyk-scan:
     permissions:
@@ -56,4 +56,4 @@ jobs:
         if: ${{ env.GENERATE_SARIF == 'true' }}
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: snyk.sarif
+          sarif_file: ./snyk.sarif
