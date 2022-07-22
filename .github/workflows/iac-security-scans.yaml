@@ -1,0 +1,101 @@
+name: perform-security-scans
+
+on:
+  workflow_call:
+    inputs:
+      upload_sarif:
+        description: "Flag to control if snyk scan issues need to be published in Github Security tab."
+        required: false
+        type: boolean
+        default: true
+      severity:
+        description: "Severity threshold of alerts to report"
+        required: false
+        type: string
+        default: "high"
+      terrascan_iac_type:
+        description: "IaC Type (helm, k8s, terraform)"
+        required: false
+        type: string
+        default: "terraform"
+      terrascan_iac_version:
+        description: "IaC Version (helm: v3, k8s: v1, terraform: v12, v14, v15)"
+        required: false
+        type: string
+        default: "v15"
+      terrascan_iac_dir:
+        description: "Severity threshold of alerts to report"
+        required: true
+        type: string
+    secrets:
+      snyk_auth_token:
+        description: "Auth Token for Snyk"
+        required: true
+
+env:
+  UPLOAD_SARIF: ${{ inputs.upload_sarif }}
+  SEVERITY: ${{ inputs.severity }}
+  IAC_TYPE: ${{ inputs.terrascan_iac_type }}
+  IAC_VERSION: ${{ inputs.terrascan_iac_version }}
+  IAC_DIR: ${{ inputs.terrascan_iac_dir }}
+
+
+jobs:
+  snyk-scan:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    name: Run snyk scan
+    steps:
+      - name: Checkout application GitHub repo
+        uses: actions/checkout@v3
+      
+      - name: Run Snyk to check configuration files for security issues
+        # Snyk can be used to break the build when it detects security issues.
+        # In this case we want to upload the issues to GitHub Code Scanning
+        continue-on-error: true
+        uses: snyk/actions/iac@master
+        env:
+          # In order to use the Snyk Action you will need to have a Snyk API token.
+          # More details in https://github.com/snyk/actions#getting-your-snyk-token
+          # or you can signup for free at https://snyk.io/login
+          SNYK_TOKEN: ${{ secrets.snyk_auth_token }}
+        with:
+          # Add the path to the configuration file that you would like to test.
+          # For example `deployment.yaml` for a Kubernetes deployment manifest
+          # or `main.tf` for a Terraform configuration file
+          file: .
+          args: ${{ format('--severity-threshold={0}', env.SEVERITY) }}
+
+      - name: Upload result to GitHub Code Scanning
+        if: ${{ env.UPLOAD_SARIF == 'true' }}
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: snyk.sarif
+
+  terrascan:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    name: Run terrascan
+    steps:
+      - name: Checkout application GitHub repo
+        uses: actions/checkout@v3
+      
+      - name: Run Terrascan
+        uses: tenable/terrascan-action@main
+        continue-on-error: true
+        with:
+          iac_type: ${{ env.IAC_TYPE }}
+          iac_version: ${{ env.IAC_VERSION }}
+          iac_dir: ${{ env.IAC_DIR }}
+          policy_type: all
+          sarif_upload: ${{ env.UPLOAD_SARIF }}
+
+      - name: Upload result to GitHub Code Scanning
+        if: ${{ env.UPLOAD_SARIF == 'true' }}
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: terrascan.sarif
