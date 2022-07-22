@@ -19,8 +19,8 @@ on:
         required: true
 
 env:
-  GENERATE_SARIF: ${{ inputs.dockerdev_registry }}
-  SEVERITY: ${{ inputs.docker_registry }}
+  GENERATE_SARIF: ${{ inputs.generate_sarif }}
+  SEVERITY: ${{ inputs.severity }}
   
 jobs:
   snyk-scan:
