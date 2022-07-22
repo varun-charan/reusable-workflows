@@ -70,12 +70,13 @@ jobs:
         uses: actions/checkout@v3
       
       - name: Run Terrascan
-        id: terrascan
         uses: tenable/terrascan-action@main
+        # continue-on-error: true
         with:
           iac_type: 'terraform'
           iac_version: 'v15'
           policy_type: 'all'
+          only_warn: true
           sarif_upload: ${{ env.UPLOAD_SARIF }}
 
       - name: Upload result to GitHub Code Scanning
