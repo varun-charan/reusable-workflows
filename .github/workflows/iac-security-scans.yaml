@@ -13,6 +13,20 @@ on:
         required: false
         type: string
         default: "high"
+      terrascan_iac_type:
+        description: "IaC Type (helm, k8s, terraform)"
+        required: false
+        type: string
+        default: "terraform"
+      terrascan_iac_version:
+        description: "IaC Version (helm: v3, k8s: v1, terraform: v12, v14, v15)"
+        required: false
+        type: string
+        default: "v15"
+      terrascan_iac_dir:
+        description: "Severity threshold of alerts to report"
+        required: true
+        type: string
     secrets:
       snyk_auth_token:
         description: "Auth Token for Snyk"
@@ -21,9 +35,10 @@ on:
 env:
   UPLOAD_SARIF: ${{ inputs.upload_sarif }}
   SEVERITY: ${{ inputs.severity }}
-  
-permissions:
-  contents: read
+  IAC_TYPE: ${{ inputs.terrascan_iac_type }}
+  IAC_VERSION: ${{ inputs.terrascan_iac_version }}
+  IAC_DIR: ${{ inputs.terrascan_iac_dir }}
+
 
 jobs:
   snyk-scan:
@@ -73,9 +88,9 @@ jobs:
         uses: tenable/terrascan-action@main
         continue-on-error: true
         with:
-          iac_type: terraform
-          iac_version: v15
-          iac_dir: aws-tfstate-bucket
+          iac_type: ${{ env.IAC_TYPE }}
+          iac_version: ${{ env.IAC_VERSION }}
+          iac_dir: ${{ env.IAC_DIR }}
           policy_type: all
           sarif_upload: ${{ env.UPLOAD_SARIF }}
 
