@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        TARGET_DIRECTORY: "${{ env.TARGET_DIRS }}"
+        TARGET_DIRECTORY: "${{ fromJson(env.TARGET_DIRS) }}"
     name: Run terrascan
     steps:
       - name: Checkout application GitHub repo
