@@ -62,7 +62,6 @@ jobs:
     #     TARGET_DIRECTORY: "${{ fromJson(needs.workaround.outputs.tf_modules) }}"
     steps:
     - run: |
-        # echo "${{ matrix.TARGET_DIRECTORY }}"
         echo "${{ fromJson(needs.workaround.outputs.tf_modules) }}"
 
   snyk-scan:
