@@ -43,9 +43,10 @@ env:
 jobs:
   debug:
     runs-on: ubuntu-latest
-    run: |
-      echo ${{ env.TARGET_DIRS }}
-      echo ${{ fromJson(env.TARGET_DIRS) }}
+    steps:
+    - run: |
+        echo ${{ env.TARGET_DIRS }}
+        echo ${{ fromJson(env.TARGET_DIRS) }}
 
   snyk-scan:
     permissions:
