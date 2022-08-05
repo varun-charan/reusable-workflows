@@ -43,10 +43,13 @@ env:
 jobs:
   debug:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        TARGET_DIRECTORY: "${{ fromJson(env.TARGET_DIRS) }}"
     steps:
     - run: |
         echo ${{ env.TARGET_DIRS }}
-        echo "${{ fromJson(env.TARGET_DIRS) }}"
+        echo "${{ matrix.TARGET_DIRECTORY }}"
 
   snyk-scan:
     permissions:
