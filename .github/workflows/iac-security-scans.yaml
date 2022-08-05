@@ -46,7 +46,7 @@ jobs:
     steps:
     - run: |
         echo ${{ env.TARGET_DIRS }}
-        echo ${{ fromJson(env.TARGET_DIRS) }}
+        echo "${{ fromJson(env.TARGET_DIRS) }}"
 
   snyk-scan:
     permissions:
@@ -86,9 +86,9 @@ jobs:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
-    # strategy:
-    #   matrix:
-    #     TARGET_DIRECTORY: "${{ fromJson(env.TARGET_DIRS) }}"
+    strategy:
+      matrix:
+        TARGET_DIRECTORY: "${{ fromJson(env.TARGET_DIRS) }}"
     name: Run terrascan
     steps:
       - name: Checkout application GitHub repo
@@ -100,7 +100,7 @@ jobs:
         with:
           iac_type: ${{ env.IAC_TYPE }}
           iac_version: ${{ env.IAC_VERSION }}
-          # iac_dir: ${{ matrix.TARGET_DIRECTORY }}
+          iac_dir: ${{ matrix.TARGET_DIRECTORY }}
           policy_type: all
           sarif_upload: ${{ env.UPLOAD_SARIF }}
 
