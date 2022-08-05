@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        TARGET_DIRECTORY: "${{ fromJson(env.TARGET_DIRS) }}"
+        TARGET_DIRECTORY: "${{ env.TARGET_DIRS }}"
     steps:
     - run: |
         echo ${{ env.TARGET_DIRS }}
@@ -56,6 +56,9 @@ jobs:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
+    # strategy:
+    #   matrix:
+    #     TARGET_DIRECTORY: "${{ fromJson(env.TARGET_DIRS) }}"
     name: Run snyk scan
     steps:
       - name: Checkout application GitHub repo
@@ -75,7 +78,7 @@ jobs:
           # Add the path to the configuration file that you would like to test.
           # For example `deployment.yaml` for a Kubernetes deployment manifest
           # or `main.tf` for a Terraform configuration file
-          file: .
+          # file: ${{ matrix.TARGET_DIRECTORY }}
           args: ${{ format('--severity-threshold={0}', env.SEVERITY) }}
 
       - name: Upload result to GitHub Code Scanning
