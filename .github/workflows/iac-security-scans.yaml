@@ -40,16 +40,6 @@ env:
 
 
 jobs:
-  debug:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
-    steps:
-    - name: Debug2
-      run: |
-        echo "${{ matrix.TARGET_DIRECTORY }}"
-
   snyk-scan:
     permissions:
       contents: read # for actions/checkout to fetch code
