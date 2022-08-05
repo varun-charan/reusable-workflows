@@ -50,7 +50,9 @@ jobs:
       id: get_target_tf_modules
       shell: bash
       run: |
-        echo "::set-output name=tf_modules::${{ env.TARGET_DIRS }}"
+        echo "${{ env.TARGET_DIRS }}"
+        TEMP="${{ env.TARGET_DIRS }}"
+        echo "::set-output name=tf_modules::$TEMP"
 
   debug:
     runs-on: ubuntu-latest
