@@ -59,7 +59,7 @@ jobs:
     needs: [ workaround ]
     strategy:
       matrix:
-        TARGET_DIRECTORY: "${{ needs.workaround.outputs.tf_modules }}"
+        TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
     steps:
     - run: |
         echo "${{ matrix.TARGET_DIRECTORY }}"
