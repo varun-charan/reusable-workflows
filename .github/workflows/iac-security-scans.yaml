@@ -8,6 +8,10 @@ on:
         required: false
         type: boolean
         default: true
+      target_dirs:
+        description: "List of all modified IaC directories (Terraform Modules, Helm Charts, etc.)"
+        required: true
+        type: string
       severity:
         description: "Severity threshold of alerts to report"
         required: false
@@ -23,10 +27,6 @@ on:
         required: false
         type: string
         default: "v15"
-      terrascan_iac_dir:
-        description: "Severity threshold of alerts to report"
-        required: true
-        type: string
     secrets:
       snyk_auth_token:
         description: "Auth Token for Snyk"
@@ -37,7 +37,6 @@ env:
   SEVERITY: ${{ inputs.severity }}
   IAC_TYPE: ${{ inputs.terrascan_iac_type }}
   IAC_VERSION: ${{ inputs.terrascan_iac_version }}
-  IAC_DIR: ${{ inputs.terrascan_iac_dir }}
 
 
 jobs:
@@ -46,6 +45,9 @@ jobs:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
     name: Run snyk scan
     steps:
       - name: Checkout application GitHub repo
@@ -65,7 +67,7 @@ jobs:
           # Add the path to the configuration file that you would like to test.
           # For example `deployment.yaml` for a Kubernetes deployment manifest
           # or `main.tf` for a Terraform configuration file
-          file: .
+          file: ${{ matrix.TARGET_DIRECTORY }}
           args: ${{ format('--severity-threshold={0}', env.SEVERITY) }}
 
       - name: Upload result to GitHub Code Scanning
@@ -79,6 +81,9 @@ jobs:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
     name: Run terrascan
     steps:
       - name: Checkout application GitHub repo
@@ -90,7 +95,7 @@ jobs:
         with:
           iac_type: ${{ env.IAC_TYPE }}
           iac_version: ${{ env.IAC_VERSION }}
-          iac_dir: ${{ env.IAC_DIR }}
+          iac_dir: ${{ matrix.TARGET_DIRECTORY }}
           policy_type: all
           sarif_upload: ${{ env.UPLOAD_SARIF }}
 
