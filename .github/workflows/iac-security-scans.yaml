@@ -57,12 +57,13 @@ jobs:
   debug:
     runs-on: ubuntu-latest
     needs: [ workaround ]
-    strategy:
-      matrix:
-        TARGET_DIRECTORY: "${{ fromJson(needs.workaround.outputs.tf_modules) }}"
+    # strategy:
+    #   matrix:
+    #     TARGET_DIRECTORY: "${{ fromJson(needs.workaround.outputs.tf_modules) }}"
     steps:
     - run: |
         echo "${{ matrix.TARGET_DIRECTORY }}"
+        echo "${{ fromJson(needs.workaround.outputs.tf_modules) }}"
 
   snyk-scan:
     permissions:
