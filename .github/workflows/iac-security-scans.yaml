@@ -42,7 +42,6 @@ env:
 jobs:
   debug:
     runs-on: ubuntu-latest
-    needs: [ workaround ]
     strategy:
       matrix:
         TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
