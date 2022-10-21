@@ -41,7 +41,7 @@ env:
 
 jobs:
   snyk-scan:
-    if: fromJson(inputs.target_dirs) != '{}'
+    if: inputs.target_dirs != '{}'
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
@@ -78,7 +78,7 @@ jobs:
           sarif_file: snyk.sarif
 
   terrascan:
-    if: fromJson(inputs.target_dirs) != '[]'
+    if: inputs.target_dirs != '[]'
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
