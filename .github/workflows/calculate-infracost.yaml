@@ -61,10 +61,9 @@ jobs:
                               --compare-to=/tmp/infracost-base.json \
                               --out-file=/tmp/infracost.json
 
-      - name: Debug
+      - name: Show Infracost as Diff
         run: |
-          cat /tmp/infracost.json
-
+          infracost output --path /tmp/infracost.json --format diff
 
       # Posts a comment to the PR using the 'update' behavior.
       # This creates a single comment and updates it. The "quietest" option.
