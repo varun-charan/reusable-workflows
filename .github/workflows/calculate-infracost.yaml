@@ -69,7 +69,7 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: "infracost"
-          path: "/tmp/"
+          path: "/tmp/*.json"
 
   post-infra-cost:
     needs: [ get-infra-cost ]
