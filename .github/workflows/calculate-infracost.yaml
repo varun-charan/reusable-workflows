@@ -80,7 +80,7 @@ jobs:
 
   post-infra-cost:
     needs: [ get-infra-cost ]
-    if: inputs.target_dirs != '[]'
+    if: inputs.target_dirs != '[]' && github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
@@ -111,7 +111,6 @@ jobs:
 
       # Posts a comment to the PR using the 'update' behavior. This comment describes combined cost of all added/modified Terraform modules.
       - name: Post Infracost comment
-        if: ${{ github.event_name == 'pull_request' }}
         run: |
           infracost comment github --path=combined_infracost.json                         \
                                   --repo=$GITHUB_REPOSITORY                               \
