@@ -49,9 +49,14 @@ jobs:
                               --format=json \
                               --out-file=/tmp/infracost-base.json
 
-      # Checkout the current PR branch so we can create a diff.
-      - name: Checkout PR branch
+      # Checkout the current branch so we can create a diff.
+      - name: Checkout current branch
         uses: actions/checkout@v3
+
+      - name: Debug
+        run: |
+          pwd
+          ls
 
       # Generate an Infracost diff and save it to a JSON file.
       - name: Generate Infracost diff
