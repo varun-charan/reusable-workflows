@@ -42,11 +42,6 @@ jobs:
         with:
           ref: master
 
-      - name: Debug
-        run: |
-          pwd
-          ls
-
       # Generate Infracost JSON file as the baseline.
       - name: Generate Infracost cost estimate baseline
         run: |
@@ -58,11 +53,6 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v3
 
-      - name: Debug
-        run: |
-          pwd
-          ls
-
       # Generate an Infracost diff and save it to a JSON file.
       - name: Generate Infracost diff
         run: |
@@ -70,6 +60,10 @@ jobs:
                               --format=json \
                               --compare-to=/tmp/infracost-base.json \
                               --out-file=/tmp/infracost.json
+
+      - name: Debug
+        run: |
+          cat /tmp/infracost.json
 
 
       # Posts a comment to the PR using the 'update' behavior.
