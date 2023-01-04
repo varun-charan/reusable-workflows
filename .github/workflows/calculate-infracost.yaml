@@ -31,8 +31,6 @@ jobs:
     steps:
       - name: Setup Infracost
         uses: infracost/actions/setup@v2
-        # See https://github.com/infracost/actions/tree/master/setup for other inputs
-        # If you can't use this action, see Docker images in https://infracost.io/cicd
         with:
           api-key: ${{ secrets.infracost_api_key }}
 
@@ -45,8 +43,8 @@ jobs:
       # Generate Infracost JSON file as the baseline.
       - name: Generate Infracost cost estimate baseline
         run: |
-          infracost breakdown --path=${{ matrix.TARGET_DIRECTORY }} \
-                              --format=json \
+          infracost breakdown --path=${{ matrix.TARGET_DIRECTORY }}     \
+                              --format=json                             \
                               --out-file=/tmp/infracost-base.json
 
       # Checkout the current branch so we can create a diff.
@@ -56,24 +54,28 @@ jobs:
       # Generate an Infracost diff and save it to a JSON file.
       - name: Generate Infracost diff
         run: |
-          infracost diff --path=${{ matrix.TARGET_DIRECTORY }} \
-                              --format=json  \
-                              --show-skipped \
-                              --compare-to=/tmp/infracost-base.json \
+          infracost diff --path=${{ matrix.TARGET_DIRECTORY }}          \
+                              --format=json                             \
+                              --show-skipped                            \
+                              --compare-to=/tmp/infracost-base.json     \
                               --out-file="/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json"
 
+      # Output Infracost of single Terraform module as DIFF
       - name: Show Infracost as Diff
         run: |
           infracost output --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json" --format diff --show-skipped
-      
-      - run: |
-          ls -la /tmp/
 
+      # Upload all intermediate Terraform module JSONs so that they can be used across jobs.
       - uses: actions/upload-artifact@master
         with:
           name: "infracost"
           path: |
+            # Upload all TF module cost JSONs
+            #
             /tmp/*.json
+
+            # Don't upload base JSON
+            #
             !/tmp/infracost-base.json
 
   post-infra-cost:
@@ -87,19 +89,16 @@ jobs:
     steps:
       - name: Setup Infracost
         uses: infracost/actions/setup@v2
-        # See https://github.com/infracost/actions/tree/master/setup for other inputs
-        # If you can't use this action, see Docker images in https://infracost.io/cicd
         with:
           api-key: ${{ secrets.infracost_api_key }}
 
+      # Download intermediate Terraform module JSONs
       - uses: actions/download-artifact@master
         with:
           name: "infracost"
           path: "/tmp/"
 
-      - run: |
-          ls -la /tmp/
-
+      # Combine all intermediate module JSONs into one single JSON and print the combined output as DIFF
       - name: Show combined Infracost as Diff
         run: |
           # Combine all infracost-*.json files
@@ -110,18 +109,12 @@ jobs:
           #
           infracost output --path "combined_infracost.json" --format diff --show-skipped
 
-      # Posts a comment to the PR using the 'update' behavior.
-      # This creates a single comment and updates it. The "quietest" option.
-      # The other valid behaviors are:
-      #   delete-and-new - Delete previous comments and create a new one.
-      #   hide-and-new - Minimize previous comments and create a new one.
-      #   new - Create a new cost estimate comment on every push.
-      # See https://www.infracost.io/docs/features/cli_commands/#comment-on-pull-requests for other options.
+      # Posts a comment to the PR using the 'update' behavior. This comment describes combined cost of all added/modified Terraform modules.
       - name: Post Infracost comment
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          infracost comment github --path=combined_infracost.json \
-                                  --repo=$GITHUB_REPOSITORY \
-                                  --github-token=${{github.token}} \
-                                  --pull-request=${{github.event.pull_request.number}} \
+          infracost comment github --path=combined_infracost.json                         \
+                                  --repo=$GITHUB_REPOSITORY                               \
+                                  --github-token=${{github.token}}                        \
+                                  --pull-request=${{github.event.pull_request.number}}    \
                                   --behavior=update
