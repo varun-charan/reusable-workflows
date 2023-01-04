@@ -65,8 +65,6 @@ jobs:
       - name: Show Infracost as Diff
         run: |
           infracost output --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json" --format diff --show-skipped
-
-          infracost breakdown --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json"
       
       - run: |
           ls -la /tmp/
