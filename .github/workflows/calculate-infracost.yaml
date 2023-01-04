@@ -122,7 +122,7 @@ jobs:
       - name: Post Infracost comment
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          infracost comment github --path=/tmp/combined_infracost.json \
+          infracost comment github --path=combined_infracost.json \
                                   --repo=$GITHUB_REPOSITORY \
                                   --github-token=${{github.token}} \
                                   --pull-request=${{github.event.pull_request.number}} \
