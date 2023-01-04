@@ -59,11 +59,30 @@ jobs:
           infracost diff --path=${{ matrix.TARGET_DIRECTORY }} \
                               --format=json \
                               --compare-to=/tmp/infracost-base.json \
-                              --out-file=/tmp/infracost.json
+                              --out-file="/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json"
 
       - name: Show Infracost as Diff
         run: |
-          infracost output --path /tmp/infracost.json --format diff
+          infracost output --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json" --format diff
+
+  post-infra-cost:
+    needs: [ get-infra-cost ]
+    if: inputs.target_dirs != '[]'
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    name: Publish Infracost to GitHub
+    steps:
+      - name: Show combined Infracost as Diff
+        run: |
+          # Combine all infracost-*.json files
+          #
+          infracost output --path "/tmp/infracost-*.json" --format json --out-file combined_infracost.json
+
+          # Show the combined InfraCost JSON in DIFF format
+          #
+          infracost output --path "/tmp/combined_infracost.json" --format diff
 
       # Posts a comment to the PR using the 'update' behavior.
       # This creates a single comment and updates it. The "quietest" option.
@@ -75,8 +94,8 @@ jobs:
       - name: Post Infracost comment
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          infracost comment github --path=/tmp/infracost.json \
-                                   --repo=$GITHUB_REPOSITORY \
-                                   --github-token=${{github.token}} \
-                                   --pull-request=${{github.event.pull_request.number}} \
-                                   --behavior=update
+          infracost comment github --path=/tmp/combined_infracost.json \
+                                  --repo=$GITHUB_REPOSITORY \
+                                  --github-token=${{github.token}} \
+                                  --pull-request=${{github.event.pull_request.number}} \
+                                  --behavior=update
