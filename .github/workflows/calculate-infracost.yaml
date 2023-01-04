@@ -57,13 +57,14 @@ jobs:
       - name: Generate Infracost diff
         run: |
           infracost diff --path=${{ matrix.TARGET_DIRECTORY }} \
-                              --format=json \
+                              --format=json  \
+                              --show-skipped \
                               --compare-to=/tmp/infracost-base.json \
                               --out-file="/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json"
 
       - name: Show Infracost as Diff
         run: |
-          infracost output --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json" --format diff
+          infracost output --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json" --format diff --show-skipped
 
   post-infra-cost:
     needs: [ get-infra-cost ]
@@ -78,11 +79,11 @@ jobs:
         run: |
           # Combine all infracost-*.json files
           #
-          infracost output --path "/tmp/infracost-*.json" --format json --out-file combined_infracost.json
+          infracost output --path "/tmp/infracost-*.json" --format json --show-skipped --out-file combined_infracost.json 
 
           # Show the combined InfraCost JSON in DIFF format
           #
-          infracost output --path "/tmp/combined_infracost.json" --format diff
+          infracost output --path "/tmp/combined_infracost.json" --format diff --show-skipped
 
       # Posts a comment to the PR using the 'update' behavior.
       # This creates a single comment and updates it. The "quietest" option.
