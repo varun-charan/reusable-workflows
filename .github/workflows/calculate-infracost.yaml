@@ -65,13 +65,16 @@ jobs:
       - name: Show Infracost as Diff
         run: |
           infracost output --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json" --format diff --show-skipped
+      
+      - run: |
+          ls -la /tmp/
 
       - uses: actions/upload-artifact@master
         with:
           name: "infracost"
           path: |
-            "/tmp/*.json"
-            !"/tmp/infracost-base.json"
+            /tmp/*.json
+            !/tmp/infracost-base.json
 
   post-infra-cost:
     needs: [ get-infra-cost ]
