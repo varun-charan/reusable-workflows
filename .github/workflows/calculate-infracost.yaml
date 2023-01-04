@@ -69,7 +69,9 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: "infracost"
-          path: "/tmp/*.json"
+          path: |
+            "/tmp/*.json"
+            !"/tmp/infracost-base.json"
 
   post-infra-cost:
     needs: [ get-infra-cost ]
@@ -103,7 +105,7 @@ jobs:
 
           # Show the combined InfraCost JSON in DIFF format
           #
-          infracost output --path "/tmp/combined_infracost.json" --format diff --show-skipped
+          infracost output --path "combined_infracost.json" --format diff --show-skipped
 
       # Posts a comment to the PR using the 'update' behavior.
       # This creates a single comment and updates it. The "quietest" option.
