@@ -66,6 +66,11 @@ jobs:
         run: |
           infracost output --path "/tmp/infracost-${{ matrix.TARGET_DIRECTORY }}.json" --format diff --show-skipped
 
+      - uses: actions/upload-artifact@master
+        with:
+          name: "infracost"
+          path: "/tmp/"
+
   post-infra-cost:
     needs: [ get-infra-cost ]
     if: inputs.target_dirs != '[]'
@@ -81,6 +86,11 @@ jobs:
         # If you can't use this action, see Docker images in https://infracost.io/cicd
         with:
           api-key: ${{ secrets.infracost_api_key }}
+
+      - uses: actions/download-artifact@master
+        with:
+          name: "infracost"
+          path: "/tmp/"
 
       - run: |
           ls -la /tmp/
