@@ -49,7 +49,7 @@ jobs:
     strategy:
       matrix:
         TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
-    name: Run snyk scan
+    name: snyk
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
@@ -100,7 +100,7 @@ jobs:
     strategy:
       matrix:
         TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
-    name: Run terrascan
+    name: terrascan
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3

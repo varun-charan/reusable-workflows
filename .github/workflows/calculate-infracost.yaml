@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         TARGET_DIRECTORY: "${{ fromJson(inputs.target_dirs) }}"
-    name: Get infracost
+    name: calculate cost
     steps:
       - name: Setup Infracost
         uses: infracost/actions/setup@v2
@@ -85,7 +85,7 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
-    name: Publish Infracost to GitHub
+    name: publish cost
     steps:
       - name: Setup Infracost
         uses: infracost/actions/setup@v2
