@@ -54,6 +54,7 @@ jobs:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
 
+      # The following step is needed because after PR merge, the GITHUB_REF that is required by Upload Sarif action does not meet its expected regex pattern. This steps make GITHUB_REF compatible with how Upload Sarif action is expecting it.
       - name: Update GITHUB_REF
         id: update-github-ref
         run: echo ::set-output name=fixed_github_ref::$([[ "$GITHUB_REF" =~ refs\/(heads|pull|tags)\/.* ]] && echo $GITHUB_REF || echo "refs/heads/$GITHUB_REF")
@@ -101,8 +102,14 @@ jobs:
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
+
+      # The following step is needed because after PR merge, the GITHUB_REF that is required by Upload Sarif action does not meet its expected regex pattern. This steps make GITHUB_REF compatible with how Upload Sarif action is expecting it.
+      - name: Update GITHUB_REF
+        id: update-github-ref
+        run: echo ::set-output name=fixed_github_ref::$([[ "$GITHUB_REF" =~ refs\/(heads|pull|tags)\/.* ]] && echo $GITHUB_REF || echo "refs/heads/$GITHUB_REF")
       
       - name: Run Terrascan
+        id: run_terrascan
         uses: tenable/terrascan-action@main
         continue-on-error: true
         with:
@@ -117,3 +124,9 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: terrascan.sarif
+          ref: ${{ steps.update-github-ref.outputs.fixed_github_ref }}
+          sha: ${{ github.sha }}
+
+      - name: Check TerraScan Status
+        if: steps.run_terrascan.outcome == 'failure'
+        run: exit 1
