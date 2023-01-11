@@ -53,11 +53,15 @@ jobs:
     steps:
       - name: Checkout application GitHub repo
         uses: actions/checkout@v3
+
+      - name: Update GITHUB_REF
+        id: update-github-ref
+        run: echo ::set-output name=fixed_github_ref::$([[ "$GITHUB_REF" =~ refs\/(heads|pull|tags)\/.* ]] && echo $GITHUB_REF || echo "refs/heads/$GITHUB_REF")
       
       - name: Run Snyk to check configuration files for security issues
         # Snyk can be used to break the build when it detects security issues.
         # In this case we want to upload the issues to GitHub Code Scanning
-        continue-on-error: false
+        continue-on-error: true
         id: run_snyk
         uses: snyk/actions/iac@master
         env:
@@ -77,6 +81,8 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: snyk.sarif
+          ref: ${{ steps.update-github-ref.outputs.fixed_github_ref }}
+          sha: ${{ github.sha }}
 
       - name: Check Snyk Scan Status
         if: steps.run_snyk.outcome == 'failure'
