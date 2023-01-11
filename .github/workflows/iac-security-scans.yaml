@@ -58,6 +58,7 @@ jobs:
         # Snyk can be used to break the build when it detects security issues.
         # In this case we want to upload the issues to GitHub Code Scanning
         continue-on-error: true
+        id: run_snyk
         uses: snyk/actions/iac@master
         env:
           # In order to use the Snyk Action you will need to have a Snyk API token.
@@ -76,6 +77,10 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: snyk.sarif
+
+      - name: Check Snyk Scan Status
+        if: steps.run_snyk.outcome == 'failure'
+        run: exit 1
 
   terrascan:
     if: inputs.target_dirs != '[]'
