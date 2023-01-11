@@ -59,7 +59,7 @@ jobs:
         id: update-github-ref
         run: echo ::set-output name=fixed_github_ref::$([[ "$GITHUB_REF" =~ refs\/(heads|pull|tags)\/.* ]] && echo $GITHUB_REF || echo "refs/heads/$GITHUB_REF")
       
-      - name: Run Snyk to check configuration files for security issues
+      - name: Run Snyk Scan
         # Snyk can be used to break the build when it detects security issues.
         # In this case we want to upload the issues to GitHub Code Scanning
         continue-on-error: true
@@ -87,7 +87,9 @@ jobs:
 
       - name: Check Snyk Scan Status
         if: steps.run_snyk.outcome == 'failure'
-        run: exit 1
+        run: |
+          echo "SNYK SCAN FAILED: Check logs of 'Run Snyk Scan' step above!!!\n"
+          exit 1
 
   terrascan:
     if: inputs.target_dirs != '[]'
@@ -129,4 +131,6 @@ jobs:
 
       - name: Check TerraScan Status
         if: steps.run_terrascan.outcome == 'failure'
-        run: exit 1
+        run: |
+          echo "TERRASCAN FAILED: Check logs of 'Run Terrascan' step above!!!\n"
+          exit 1
